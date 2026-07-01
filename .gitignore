@@ -11,9 +11,9 @@ venv/
 env/
 
 # Local data and generated outputs
-data/raw/
-data/processed/
-outputs/
+data/raw/*
+data/processed/*
+outputs/*
 !data/
 !data/raw/
 !data/processed/
@@ -23,6 +23,9 @@ outputs/
 !outputs/figures/
 !outputs/metrics/
 !outputs/misclassified/
+outputs/figures/*
+outputs/metrics/*
+outputs/misclassified/*
 !outputs/figures/.gitkeep
 !outputs/metrics/.gitkeep
 !outputs/misclassified/.gitkeep
