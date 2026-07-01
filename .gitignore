@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local data and generated outputs
+data/raw/
+data/processed/
+outputs/
+checkpoints/
+models/
+*.pt
+*.pth
+
+# Local notebooks and editor files
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# Superpowers/browser brainstorming artifacts
+.superpowers/
+browser-preview.html
