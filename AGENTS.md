@@ -8,6 +8,8 @@
 - 데이터셋: Oxford-IIIT Pet Dataset
 - 핵심 목표: 높은 점수보다 데이터 분리, 학습 흐름, overfitting 판단, 지표 해석, 오분류 분석을 직접 설명하는 것
 - 산출물: 결과 정리 문서와 Day 2 발표 자료
+- 학습 실험: 02 단계에서 기본 데이터셋과 train 전용 OpenCV 증강 데이터셋을 비교한다.
+- 실행 시간 비교: 02 단계에서 CPU 학습 시간과 GPU 학습 시간을 함께 비교한다.
 
 ## Agent Map
 
@@ -57,6 +59,7 @@
 2. dog/cat 라벨 변환 규칙 작성
 3. train/validation/test split 생성
 4. baseline 학습 코드 작성
-5. loss curve와 metric 계산
-6. 오분류 이미지 분석
-7. 결과 문서와 발표 자료 작성
+5. OpenCV 데이터 증강 실험 설계 및 비교
+6. loss curve와 metric 계산
+7. 오분류 이미지 분석
+8. 결과 문서와 발표 자료 작성
