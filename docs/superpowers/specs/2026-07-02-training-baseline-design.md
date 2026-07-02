@@ -47,6 +47,19 @@
 
 이번 단계에서는 간단한 CNN을 선택합니다.
 
+## Presentation Learning Note
+
+발표 자료에는 모델을 만들면서 함께 학습한 용어도 접근 과정으로 포함합니다.
+
+예시는 다음과 같습니다.
+
+- DNN은 여러 층을 쌓은 신경망을 넓게 부르는 말입니다.
+- CNN은 이미지의 공간적 특징을 학습하기 좋은 DNN 계열 구조입니다.
+- ResNet은 CNN을 깊게 쌓으면서 skip connection을 사용한 모델입니다.
+- TensorFlow와 PyTorch는 모두 딥러닝 프레임워크이지만, 이번 과제에서는 학습 루프가 코드에 잘 드러나는 PyTorch를 선택했습니다.
+
+이 내용은 단순한 용어 정리가 아니라, Jun이 왜 CNN과 PyTorch를 선택했는지 설명하는 근거로 사용합니다.
+
 ## OpenCV Development Note
 
 OpenCV 증강은 기본 학습을 이해한 뒤 다음 발전 실험으로 진행합니다.
