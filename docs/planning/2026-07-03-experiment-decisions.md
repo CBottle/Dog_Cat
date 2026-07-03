@@ -1,0 +1,262 @@
+# Dog/Cat 분류 프로젝트 의사결정 기록
+
+## 목적
+
+이 문서는 강아지/고양이 이미지 분류 과제를 진행하면서 Jun과 함께 고민하고 결정한 내용을 정리한 기록입니다.
+
+최종 목적은 단순히 높은 정확도를 내는 것이 아니라, **어떤 문제를 보고, 어떤 가설을 세우고, 어떤 실험을 추가했으며, 결과를 어떻게 비교했는지** 설명할 수 있게 만드는 것입니다.
+
+## 전체 방향
+
+이번 프로젝트는 완성된 정답 모델을 빠르게 가져오는 것보다, 직접 만든 baseline 모델을 기준으로 하나씩 개선해보는 방향으로 진행합니다.
+
+따라서 pretrained ResNet 같은 전이학습 모델은 당장 사용하지 않고, 직접 만든 CNN 안에서 성능을 개선하는 실험을 우선합니다.
+
+이 방향을 선택한 이유는 다음과 같습니다.
+
+- 과제 요구사항이 PyTorch 학습 흐름을 직접 작성하는 데 초점이 있습니다.
+- `optimizer.zero_grad -> forward -> loss -> backward -> step` 흐름을 본인이 설명해야 합니다.
+- baseline에서 하나씩 추가해야 overfitting, 데이터 증강, 학습 안정화 효과를 비교하기 쉽습니다.
+- 발표에서 "좋은 모델을 가져왔다"보다 "문제를 나누어 실험했다"는 접근 과정이 더 잘 드러납니다.
+
+## 데이터셋 결정
+
+데이터셋은 Oxford-IIIT Pet Dataset을 사용합니다.
+
+선택 이유는 다음과 같습니다.
+
+- 로그인 없이 다운로드할 수 있습니다.
+- 강아지/고양이 이진 라벨을 만들 수 있습니다.
+- 37개 품종 라벨도 함께 존재합니다.
+- 지금은 dog/cat 이진 분류를 하지만, 나중에 품종 분류로 확장할 수 있습니다.
+- Kaggle Cat and Dog 데이터셋보다 train/validation/test를 직접 나누는 과정을 보여주기 좋습니다.
+
+## 라벨 생성 결정
+
+Oxford-IIIT Pet Dataset은 품종 이름 첫 글자의 대문자/소문자 규칙으로 dog/cat을 추론할 수도 있습니다.
+
+하지만 이번 프로젝트에서는 `torchvision.datasets.OxfordIIITPet`이 제공하는 binary label 정보를 사용합니다.
+
+사용한 정보는 다음과 같습니다.
+
+- `dataset._images`: 이미지 경로 목록입니다.
+- `dataset._labels`: 품종 라벨 번호 목록입니다.
+- `dataset._bin_labels`: dog/cat 이진 라벨 번호 목록입니다.
+- `dataset.classes`: 품종 번호를 품종 이름으로 바꾸는 목록입니다.
+- `dataset.bin_classes`: 이진 라벨 번호를 `Cat`, `Dog` 이름으로 바꾸는 목록입니다.
+
+이 방식을 선택한 이유는 문자열 규칙보다 데이터셋에 포함된 명시적인 라벨을 사용하는 것이 더 안전하기 때문입니다.
+
+## split 결정
+
+train/validation/test split은 직접 구성합니다.
+
+기본 비교 split은 `70/15/15`를 사용합니다.
+
+추가로 `80/10/10`, `60/20/20` split도 만들어두어, 필요하면 split 비율에 따른 결과 차이를 비교할 수 있게 합니다.
+
+split은 단순 dog/cat 기준만 보지 않고, **breed 기준 stratified split**을 사용합니다.
+
+이렇게 결정한 이유는 다음과 같습니다.
+
+- dog/cat 비율만 맞추면 특정 품종이 train에 몰릴 수 있습니다.
+- 특정 품종이 test에 너무 적으면 모델이 어떤 품종에 약한지 분석하기 어렵습니다.
+- breed 기준으로 나누면 이진 분류에서도 더 다양한 품종을 train/validation/test에 분산시킬 수 있습니다.
+- 나중에 특정 품종에서 오분류가 많을 때 데이터 부족 문제인지 확인할 수 있습니다.
+
+## 학습 환경 결정
+
+PyTorch를 사용합니다.
+
+Keras/TensorFlow의 `model.fit()`은 학습 과정을 간단하게 숨겨주지만, 이번 과제에서는 학습 흐름을 직접 보여주는 것이 중요합니다.
+
+따라서 PyTorch로 다음 흐름을 직접 작성합니다.
+
+```text
+optimizer.zero_grad
+-> forward
+-> loss
+-> backward
+-> optimizer.step
+```
+
+GPU가 있으므로 GPU 학습을 사용합니다. 또한 CPU와 GPU 학습 시간 차이도 비교 대상으로 남깁니다.
+
+## 현재까지의 노트북 구조
+
+현재 노트북 흐름은 다음과 같습니다.
+
+```text
+01_data_split.ipynb
+-> 데이터셋 선택, 라벨 생성, train/validation/test split 생성
+
+02_training_baseline.ipynb
+-> 원본 train 데이터로 SimpleCNN baseline 학습
+
+02_1_opencv_augmentation_training.ipynb
+-> train 데이터만 OpenCV로 증강해서 SimpleCNN 학습
+```
+
+앞으로 추가할 수 있는 노트북은 다음과 같습니다.
+
+```text
+02_2_improved_cnn_training.ipynb
+-> BatchNorm, Dropout, LR Scheduler를 하나씩 추가하는 개선 실험
+
+04_evaluation_comparison.ipynb
+-> 여러 best model을 같은 test set으로 비교
+
+05_error_analysis.ipynb
+-> 오분류 이미지 확인, 원인 유형화, 개선안 정리
+```
+
+## 실험 결정 트리
+
+최종 비교 실험은 decision tree처럼 하나씩 추가하는 방식으로 구성합니다.
+
+```text
+실험 1: Baseline
+실험 2: Baseline + OpenCV
+실험 3: Baseline + BatchNorm
+실험 4: Baseline + BatchNorm + Dropout
+실험 5: Baseline + BatchNorm + Dropout + LR Scheduler
+실험 6: 최종 후보 = OpenCV + Improved CNN
+```
+
+## 실험별 의도
+
+| 실험 | 추가한 것 | 확인하고 싶은 것 |
+|---|---|---|
+| 실험 1. Baseline | 없음 | 직접 만든 기본 CNN의 기준 성능을 확인합니다. |
+| 실험 2. Baseline + OpenCV | train 데이터 증강 | 데이터 다양성을 늘리면 일반화 성능이 좋아지는지 확인합니다. |
+| 실험 3. Baseline + BatchNorm | BatchNorm | 학습이 더 안정적으로 진행되는지 확인합니다. |
+| 실험 4. Baseline + BatchNorm + Dropout | Dropout | overfitting이 줄어드는지 확인합니다. |
+| 실험 5. Baseline + BatchNorm + Dropout + LR Scheduler | LR Scheduler | validation loss가 정체될 때 learning rate 조절이 도움이 되는지 확인합니다. |
+| 실험 6. OpenCV + Improved CNN | 효과가 있었던 개선 조합 | 최종 후보 모델로 가장 좋은 성능을 낼 수 있는지 확인합니다. |
+
+## 왜 하나씩 추가하는지
+
+한 번에 여러 기능을 추가하면 성능이 좋아져도 무엇 때문에 좋아졌는지 설명하기 어렵습니다.
+
+그래서 이번 프로젝트에서는 한 단계마다 하나의 가설을 추가합니다.
+
+예를 들면 다음과 같습니다.
+
+- OpenCV 증강을 추가하면 다양한 촬영 조건에 강해질 것이라고 가정합니다.
+- BatchNorm을 추가하면 학습이 더 안정적으로 진행될 것이라고 가정합니다.
+- Dropout을 추가하면 train 데이터에만 과하게 맞는 overfitting이 줄어들 것이라고 가정합니다.
+- LR Scheduler를 추가하면 validation loss가 정체될 때 더 세밀하게 학습할 수 있을 것이라고 가정합니다.
+
+이 방식은 발표에서 다음 문장으로 설명할 수 있습니다.
+
+> 성능 개선을 한 번에 적용하지 않고, 데이터 개선과 모델 개선 요소를 하나씩 추가했습니다. 이렇게 해야 어떤 선택이 실제로 validation loss, accuracy, overfitting에 영향을 주었는지 비교할 수 있다고 판단했습니다.
+
+## best model 저장 결정
+
+각 실험마다 validation loss 기준 best model을 따로 저장합니다.
+
+예상 checkpoint 파일은 다음과 같습니다.
+
+```text
+outputs/checkpoints/
+├─ best_01_baseline_simplecnn.pt
+├─ best_02_opencv_augmented_simplecnn.pt
+├─ best_03_batchnorm_simplecnn.pt
+├─ best_04_batchnorm_dropout_simplecnn.pt
+├─ best_05_batchnorm_dropout_scheduler_simplecnn.pt
+└─ best_06_final_opencv_improved_simplecnn.pt
+```
+
+이렇게 저장하는 이유는 나중에 다시 학습하지 않고도 같은 test set에서 여러 모델을 비교할 수 있기 때문입니다.
+
+모델 checkpoint 파일은 실행 결과물이므로 Git에는 커밋하지 않습니다.
+
+## 비교 지표 결정
+
+최종 비교에서는 accuracy만 보지 않습니다.
+
+다음 지표와 결과를 함께 확인합니다.
+
+- train loss / validation loss curve
+- accuracy
+- confusion matrix
+- precision
+- recall
+- 학습 시간
+- 오분류 이미지 샘플
+- 오분류 원인 유형
+
+각 지표를 함께 보는 이유는 다음과 같습니다.
+
+- loss curve는 overfitting 여부를 판단하는 데 도움이 됩니다.
+- accuracy는 전체적으로 맞춘 비율을 보여줍니다.
+- confusion matrix는 cat을 dog로 착각했는지, dog를 cat으로 착각했는지 보여줍니다.
+- precision/recall은 어떤 상황에서 어떤 오류가 더 중요한지 설명하는 데 도움이 됩니다.
+- 오분류 이미지는 숫자 지표만으로 보이지 않는 실패 패턴을 찾는 데 도움이 됩니다.
+
+## 최종 분석 방향
+
+최종 분석에서는 가장 accuracy가 높은 모델만 고르지 않습니다.
+
+모델별로 다음 질문에 답하는 방식으로 정리합니다.
+
+| 모델 | 분석 질문 |
+|---|---|
+| Baseline | 기본 CNN만으로 어느 정도 성능이 나왔는가 |
+| OpenCV 증강 | 데이터를 늘리면 일반화 성능이 좋아졌는가 |
+| BatchNorm | 학습이 더 안정적으로 되었는가 |
+| Dropout | overfitting이 줄었는가 |
+| LR Scheduler | validation loss 정체 구간에서 추가 개선이 있었는가 |
+| Final | 효과 있었던 방법을 합쳤을 때 가장 좋은 결과가 나왔는가 |
+
+## MLOps 관점에서 저장할 것
+
+이번 프로젝트는 완전한 MLOps 시스템은 아니지만, 실험을 재현하고 비교할 수 있게 다음 항목을 저장합니다.
+
+```text
+Git에 저장합니다.
+- 노트북
+- 문서
+- requirements.txt
+- split 생성 코드
+- 실험 설계 기록
+
+Git에 저장하지 않습니다.
+- 원본 데이터셋
+- 증강 이미지
+- 모델 checkpoint .pt 파일
+- 큰 출력 결과물
+```
+
+실험 결과로는 다음 파일들을 저장합니다.
+
+```text
+outputs/checkpoints/
+-> best model .pt 파일
+
+outputs/figures/
+-> loss curve, confusion matrix 이미지
+
+outputs/metrics/
+-> metric CSV, 실험 요약 CSV
+
+outputs/misclassified/
+-> 오분류 이미지 샘플
+```
+
+## 발표용 핵심 문장
+
+발표에서는 다음 흐름으로 설명합니다.
+
+> 저는 먼저 직접 만든 SimpleCNN을 baseline으로 만들었습니다. 이후 성능 개선을 데이터 개선과 모델 개선으로 나누어 실험했습니다. 데이터 개선으로는 OpenCV 증강을 적용했고, 모델 개선으로는 BatchNorm, Dropout, LR Scheduler를 하나씩 추가했습니다. 각 단계마다 best model을 저장하고, 같은 test set에서 loss curve, accuracy, precision/recall, confusion matrix, 오분류 이미지를 비교하여 어떤 개선이 실제로 도움이 되었는지 판단했습니다.
+
+## 현재 결론
+
+현재까지의 방향은 다음과 같습니다.
+
+- 전이학습은 아직 사용하지 않습니다.
+- 직접 만든 CNN baseline을 중심으로 개선합니다.
+- 실험은 한 번에 하나씩 추가하는 decision tree 방식으로 진행합니다.
+- 각 실험의 best model을 저장합니다.
+- 마지막에는 여러 모델을 같은 test set에서 비교합니다.
+- 결과 분석은 숫자 지표와 오분류 이미지 분석을 함께 사용합니다.
