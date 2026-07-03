@@ -31,9 +31,10 @@
 12. Step 11. train 1 epoch 함수 만들기
 13. Step 12. validation 함수 만들기
 14. Step 13. 전체 학습 루프 만들기
-15. Step 14. train/validation loss curve 그리기
-16. Step 15. CPU/GPU 학습 시간 비교를 위한 기록 남기기
-17. Step 16. 결과를 보고 다음 실험 계획 정리하기
+15. Step 13-1. EarlyStopping과 best model checkpoint를 포함한 개선 학습 루프 만들기
+16. Step 14. train/validation loss curve 그리기
+17. Step 15. CPU/GPU 학습 시간 비교를 위한 기록 남기기
+18. Step 16. 결과를 보고 다음 실험 계획 정리하기
 
 ## Model Approach
 
@@ -64,6 +65,8 @@
 이 내용은 단순한 용어 정리가 아니라, Jun이 왜 CNN과 PyTorch를 선택했는지 설명하는 근거로 사용합니다.
 
 Keras와 비교하면 `Dense(..., activation="relu")`의 `relu`는 PyTorch의 `nn.ReLU()`와 비슷하고, `model.compile(loss="sparse_categorical_crossentropy", optimizer="adam")`의 loss와 optimizer는 PyTorch에서 `criterion = nn.CrossEntropyLoss()`와 `optimizer = optim.Adam(...)`으로 분리해서 정의합니다.
+
+학습 루프는 먼저 3 epoch baseline으로 원리를 확인한 뒤, `Step 13-1`에서 Keras의 `EarlyStopping`과 `ModelCheckpoint(save_best_only=True)`에 해당하는 로직을 직접 구현합니다. 개선 루프는 최대 30 epoch, patience 5를 기본값으로 두고, validation loss가 가장 낮을 때 `best_baseline_simplecnn.pt` checkpoint를 저장합니다.
 
 ## OpenCV Development Note
 
