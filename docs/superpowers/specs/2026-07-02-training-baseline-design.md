@@ -57,8 +57,13 @@
 - CNN은 이미지의 공간적 특징을 학습하기 좋은 DNN 계열 구조입니다.
 - ResNet은 CNN을 깊게 쌓으면서 skip connection을 사용한 모델입니다.
 - TensorFlow와 PyTorch는 모두 딥러닝 프레임워크이지만, 이번 과제에서는 학습 루프가 코드에 잘 드러나는 PyTorch를 선택했습니다.
+- ReLU는 모델 layer 사이에서 사용하는 activation function입니다.
+- CrossEntropyLoss는 분류 문제에서 예측과 정답의 차이를 계산하는 loss function입니다.
+- Adam은 loss를 줄이는 방향으로 모델 가중치를 업데이트하는 optimizer입니다.
 
 이 내용은 단순한 용어 정리가 아니라, Jun이 왜 CNN과 PyTorch를 선택했는지 설명하는 근거로 사용합니다.
+
+Keras와 비교하면 `Dense(..., activation="relu")`의 `relu`는 PyTorch의 `nn.ReLU()`와 비슷하고, `model.compile(loss="sparse_categorical_crossentropy", optimizer="adam")`의 loss와 optimizer는 PyTorch에서 `criterion = nn.CrossEntropyLoss()`와 `optimizer = optim.Adam(...)`으로 분리해서 정의합니다.
 
 ## OpenCV Development Note
 
