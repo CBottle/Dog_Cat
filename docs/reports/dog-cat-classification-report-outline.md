@@ -431,6 +431,15 @@ overfitting(과적합)은 train loss(학습 손실)는 계속 낮아지지만 va
 
 전체 test(테스트) 이미지 중 모델이 맞힌 비율입니다.
 
+03 평가 노트북에서 test set(테스트셋)으로 계산한 accuracy(정확도)는 다음과 같습니다.
+
+| 모델 | 맞힌 개수 / 전체 개수 | accuracy(정확도) | 해석 |
+|---|---:|---:|---|
+| Regularized Original | 425 / 552 | 0.7699 | 최종 선택 후보입니다. 성능과 학습 시간의 균형이 좋았습니다. |
+| Regularized OpenCV | 431 / 552 | 0.7808 | test accuracy는 조금 더 높았지만, 학습 시간이 훨씬 길었습니다. |
+
+test set(테스트셋)만 보면 Regularized OpenCV가 약 1.1%p 정도 높았습니다. 하지만 최종 선택은 test accuracy 하나만 보고 결정하지 않고, validation loss(검증 손실), validation accuracy(검증 정확도), 학습 시간, 실험 목적을 함께 보고 판단했습니다.
+
 장점:
 
 - 직관적입니다.
@@ -480,6 +489,23 @@ Regularized OpenCV dog recall = 289 / (289 + 85) = 0.773
 cat precision(고양이 정밀도) = 맞게 cat이라고 예측한 수 / cat이라고 예측한 전체 수
 ```
 
+test set(테스트셋) 기준 precision(정밀도)은 다음과 같습니다.
+
+| 모델 | macro precision(평균 정밀도) | cat precision | dog precision | 해석 |
+|---|---:|---:|---:|---|
+| Regularized Original | 0.7381 | 0.6667 | 0.8095 | dog라고 예측한 결과는 비교적 믿을 만하지만, cat 예측은 상대적으로 약했습니다. |
+| Regularized OpenCV | 0.7574 | 0.6256 | 0.8892 | dog precision이 높아서 dog라고 예측했을 때 실제 dog일 가능성이 높았습니다. |
+
+계산식으로 보면 다음과 같습니다.
+
+```text
+Regularized Original cat precision = 102 / (102 + 51) = 0.667
+Regularized Original dog precision = 323 / (323 + 76) = 0.810
+
+Regularized OpenCV cat precision = 142 / (142 + 85) = 0.626
+Regularized OpenCV dog precision = 289 / (289 + 36) = 0.889
+```
+
 precision(정밀도)이 중요한 상황:
 
 - 모델이 예측한 결과를 얼마나 믿을 수 있는지가 중요할 때
@@ -495,6 +521,13 @@ precision(정밀도)이 중요한 상황:
 cat recall(고양이 재현율) = 맞게 cat이라고 예측한 수 / 실제 cat 전체 수
 ```
 
+test set(테스트셋) 기준 recall(재현율)은 다음과 같습니다.
+
+| 모델 | macro recall(평균 재현율) | cat recall | dog recall | 해석 |
+|---|---:|---:|---:|---|
+| Regularized Original | 0.7183 | 0.5730 | 0.8636 | 실제 dog는 잘 찾지만, 실제 cat을 놓치는 경우가 많았습니다. |
+| Regularized OpenCV | 0.7852 | 0.7978 | 0.7727 | cat recall은 크게 좋아졌지만 dog recall은 낮아졌습니다. |
+
 recall(재현율)이 중요한 상황:
 
 - 특정 class를 놓치지 않는 것이 중요할 때
@@ -504,9 +537,18 @@ recall(재현율)이 중요한 상황:
 
 cat과 dog를 같은 비중으로 보고 평균낸 값입니다.
 
+test set(테스트셋) 기준 macro average(단순 평균)는 다음과 같습니다.
+
+| 모델 | macro precision | macro recall | macro f1-score | 해석 |
+|---|---:|---:|---:|---|
+| Regularized Original | 0.7381 | 0.7183 | 0.7260 | dog 성능은 좋지만 cat 성능이 낮아 평균 점수가 내려갔습니다. |
+| Regularized OpenCV | 0.7574 | 0.7852 | 0.7641 | test 기준으로는 두 class를 더 균형 있게 맞힌 편입니다. |
+
+f1-score(F1 점수)는 precision(정밀도)과 recall(재현율)을 함께 보는 지표입니다. 이번 test 결과에서는 Regularized OpenCV가 accuracy와 macro f1-score 모두 조금 더 높았습니다. 다만 OpenCV 모델은 학습 시간이 약 913.6초로 Regularized Original의 약 198.9초보다 훨씬 길었기 때문에, 최종 선택에서는 성능과 효율을 함께 고려했습니다.
+
 발표용 문장:
 
-> accuracy(정확도)는 전체 정답률을 보여주지만, 어떤 class(분류 클래스)에서 어떤 방향으로 틀렸는지는 알 수 없습니다. 그래서 confusion matrix(혼동 행렬)로 오분류 방향을 확인하고, precision(정밀도)과 recall(재현율)을 함께 계산했습니다. precision은 예측의 신뢰도가 중요할 때, recall은 놓치지 않는 것이 중요할 때 더 의미가 있다고 판단했습니다.
+> accuracy(정확도)는 전체 정답률을 보여주지만, 어떤 class(분류 클래스)에서 어떤 방향으로 틀렸는지는 알 수 없습니다. test set 기준으로 Regularized OpenCV의 accuracy가 0.7808로 Regularized Original의 0.7699보다 조금 높았습니다. 하지만 confusion matrix(혼동 행렬)를 보니 Original은 cat을 dog로 틀리는 경향이 강했고, OpenCV는 dog를 cat으로 틀리는 경향이 강했습니다. 그래서 accuracy 하나만 보지 않고 precision(정밀도), recall(재현율), 학습 시간까지 함께 비교했습니다.
 
 ## 9. 오분류 이미지 분석
 
@@ -601,9 +643,26 @@ CSV 기준으로 보면 고양이 품종이 상위에 많이 포함되어 있습
 
 이 차이는 OpenCV augmentation(데이터 증강)이 단순히 성능만 바꾼 것이 아니라, 모델이 헷갈리는 방향도 바꿀 수 있음을 보여줍니다.
 
+Regularized OpenCV 모델의 confidence(확신도) 상위 오분류도 확인했습니다.
+
+| 순위 | 실제 라벨 | 예측 라벨 | confidence | 품종 |
+|---:|---|---|---:|---|
+| 1 | cat | dog | 0.9999 | Birman |
+| 2 | cat | dog | 0.9991 | British Shorthair |
+| 3 | cat | dog | 0.9958 | Bombay |
+| 4 | cat | dog | 0.9944 | Bengal |
+| 5 | cat | dog | 0.9840 | Egyptian Mau |
+| 6 | cat | dog | 0.9502 | Russian Blue |
+| 7 | cat | dog | 0.9501 | Bengal |
+| 8 | cat | dog | 0.9465 | Ragdoll |
+| 9 | cat | dog | 0.9076 | Russian Blue |
+| 10 | cat | dog | 0.9014 | Siamese |
+
+흥미로운 점은 전체 오분류 개수로는 Regularized OpenCV가 `dog -> cat`을 더 많이 틀렸지만, confidence(확신도)가 가장 높은 오분류 상위 10개는 모두 `cat -> dog`였다는 점입니다. 즉, 전체 실패 방향과 "모델이 매우 자신 있게 틀린 사례"는 다를 수 있습니다. 그래서 오분류 분석에서는 개수만 보지 않고 confidence 순서로도 확인했습니다.
+
 발표용 문장:
 
-> 오분류 이미지를 confidence가 높은 순서로 확인했습니다. 최종 선택 후보인 Regularized Original 모델에서는 실제 cat을 dog로 예측한 경우가 76건으로, dog를 cat으로 예측한 51건보다 많았습니다. 특히 confidence 상위 오분류는 대부분 cat -> dog 방향이었고, British Shorthair, Sphynx, Egyptian Mau, Bengal 같은 고양이 품종이 포함되어 있었습니다. 이를 통해 모델이 일부 고양이 품종에서 cat의 핵심 특징을 충분히 잡지 못하고 dog로 강하게 착각한 경우가 있다고 판단했습니다.
+> 오분류 이미지를 confidence가 높은 순서로 확인했습니다. 최종 선택 후보인 Regularized Original 모델에서는 실제 cat을 dog로 예측한 경우가 76건으로, dog를 cat으로 예측한 51건보다 많았습니다. 특히 confidence 상위 오분류는 모두 cat -> dog 방향이었고, British Shorthair, Sphynx, Egyptian Mau, Bengal 같은 고양이 품종이 포함되어 있었습니다. 비교 모델인 Regularized OpenCV는 전체 오분류에서는 dog -> cat이 더 많았지만, confidence 상위 오분류는 cat -> dog가 많았습니다. 이를 통해 오분류 분석에서는 전체 개수와 높은 확신도의 실패 사례를 함께 봐야 한다고 판단했습니다.
 
 ### 9.4 주요 오분류 원인 후보
 
