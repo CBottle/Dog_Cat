@@ -221,6 +221,135 @@ overfitting(과적합)을 줄이기 위해 다음 방법을 추가했습니다.
 - 낮춘 learning rate(학습률): 너무 빠른 과적합 완화
 - LR Scheduler(학습률 조절기): validation loss(검증 손실)가 정체되면 learning rate 감소
 
+### 5.4 실험별 결과 기록 공간
+
+각 실험은 같은 형식으로 정리합니다.
+
+- **실험 목적:** 왜 이 실험을 했는지 정리합니다.
+- **주요 수치:** best validation loss, best validation accuracy, final accuracy, 학습 시간을 기록합니다.
+- **loss curve:** train loss와 validation loss가 어떻게 변했는지 확인합니다.
+- **해석:** overfitting(과적합), underfitting(과소적합), 개선 여부를 본인 언어로 정리합니다.
+
+#### 5.4.1 실험 1: Baseline 3 Epoch
+
+| 항목 | 값 |
+|---|---:|
+| best validation loss | 0.5486 |
+| best validation accuracy | 0.7120 |
+| final train loss | 0.5818 |
+| final validation loss | 0.5486 |
+| final train accuracy | 0.6925 |
+| final validation accuracy | 0.7120 |
+| 학습 시간 | 37.9초 |
+
+![Baseline 3 Epoch Loss Curve](../../outputs/figures/step13_basic_loss_curve.png)
+
+해석 메모:
+
+- 3 epoch만 학습했기 때문에 학습 시간이 가장 짧습니다.
+- 하지만 validation accuracy(검증 정확도)가 낮아 최종 모델로 보기에는 부족합니다.
+- 빠르지만 충분히 학습되지 않은 기준 모델로 사용했습니다.
+
+발표용 문장:
+
+> Baseline 3 Epoch 모델은 가장 빠르게 학습되었지만 validation accuracy가 낮아 충분히 학습된 모델이라고 보기 어려웠습니다. 따라서 이후 실험에서 epoch를 늘리고 early stopping을 적용해 개선 가능성을 확인했습니다.
+
+#### 5.4.2 실험 2: Baseline + EarlyStopping
+
+| 항목 | 값 |
+|---|---:|
+| best validation loss | 0.5220 |
+| best validation accuracy | 0.7536 |
+| final train loss | 0.0504 |
+| final validation loss | 1.1179 |
+| final train accuracy | 0.9849 |
+| final validation accuracy | 0.7627 |
+| 학습 시간 | 133.6초 |
+
+![Baseline EarlyStopping Loss Curve](../../outputs/figures/step13_1_improved_loss_curve.png)
+
+해석 메모:
+
+- 3 epoch baseline보다 best validation loss와 accuracy가 개선되었습니다.
+- 하지만 final train loss가 매우 낮고 final validation loss가 크게 올라 overfitting(과적합)이 강하게 나타났습니다.
+- EarlyStopping(조기 종료)과 checkpoint(체크포인트)를 사용했기 때문에 마지막 epoch가 아니라 best epoch 모델을 저장할 수 있었습니다.
+
+발표용 문장:
+
+> EarlyStopping을 적용하니 baseline보다 validation 성능은 개선되었지만, 학습이 진행될수록 train loss는 매우 낮아지고 validation loss는 올라가는 과적합 패턴이 확인되었습니다.
+
+#### 5.4.3 실험 3: OpenCV SimpleCNN
+
+| 항목 | 값 |
+|---|---:|
+| best validation loss | 0.5261 |
+| best validation accuracy | 0.7645 |
+| final train loss | 0.0156 |
+| final validation loss | 2.1406 |
+| final train accuracy | 0.9946 |
+| final validation accuracy | 0.7536 |
+| 학습 시간 | 468.3초 |
+
+![OpenCV SimpleCNN Loss Curve](../../outputs/figures/opencv_augmented_loss_curve.png)
+
+해석 메모:
+
+- OpenCV augmentation(데이터 증강)으로 train 데이터 수를 늘렸지만 overfitting(과적합)이 해결되지 않았습니다.
+- final train accuracy가 0.9946까지 올라간 반면 final validation loss는 크게 증가했습니다.
+- 단순히 유사한 변형 이미지를 많이 만드는 것만으로는 일반화 성능이 충분히 좋아지지 않는다고 판단했습니다.
+
+발표용 문장:
+
+> OpenCV 증강만 적용하면 데이터 수가 늘어나 성능이 좋아질 것이라고 예상했지만, 실제로는 train 데이터를 더 강하게 외우는 결과가 나타났습니다. 그래서 다음 실험에서는 데이터 증강보다 모델 쪽 규제를 추가했습니다.
+
+#### 5.4.4 실험 4: Regularized Original
+
+| 항목 | 값 |
+|---|---:|
+| best validation loss | 0.4877 |
+| best validation accuracy | 0.7953 |
+| final train loss | 0.3443 |
+| final validation loss | 0.5058 |
+| final train accuracy | 0.8424 |
+| final validation accuracy | 0.7862 |
+| 학습 시간 | 198.9초 |
+
+![Regularized Original Loss Curve](../../outputs/figures/regularized_original_loss_curve.png)
+
+해석 메모:
+
+- baseline 계열보다 validation loss가 낮아졌고 validation accuracy도 좋아졌습니다.
+- train과 validation 성능 차이가 baseline보다 안정적입니다.
+- 학습 시간도 OpenCV 증강 모델보다 훨씬 짧아 성능과 효율의 균형이 좋습니다.
+
+발표용 문장:
+
+> Regularized Original 모델은 BatchNorm, Dropout, weight decay, LR Scheduler를 추가해 과적합을 줄이려고 한 실험입니다. 결과적으로 validation loss와 accuracy가 baseline보다 개선되었고, 학습 시간도 과도하지 않아 최종 선택 후보로 판단했습니다.
+
+#### 5.4.5 실험 5: Regularized OpenCV
+
+| 항목 | 값 |
+|---|---:|
+| best validation loss | 0.4738 |
+| best validation accuracy | 0.7862 |
+| final train loss | 0.2440 |
+| final validation loss | 0.5151 |
+| final train accuracy | 0.8984 |
+| final validation accuracy | 0.8043 |
+| 학습 시간 | 913.6초 |
+
+![Regularized OpenCV Loss Curve](../../outputs/figures/regularized_opencv_loss_curve.png)
+
+해석 메모:
+
+- best validation loss는 가장 낮습니다.
+- 하지만 best validation accuracy는 Regularized Original보다 높지 않고, 학습 시간이 크게 늘었습니다.
+- Oxford-IIIT Pet Dataset은 비교적 좋은 조건의 이미지가 많아 OpenCV 증강 효과가 제한적이었을 가능성이 있습니다.
+
+발표용 문장:
+
+> Regularized OpenCV 모델은 validation loss 기준으로는 가장 낮은 값을 보였지만, accuracy 차이가 크지 않았고 학습 시간이 크게 증가했습니다. 따라서 최종 모델은 성능과 효율의 균형을 고려해 Regularized Original로 선택했습니다.
+
 ## 6. 모델 비교와 최종 선택
 
 ### 6.1 전체 모델 비교 기준
@@ -234,7 +363,33 @@ overfitting(과적합)을 줄이기 위해 다음 방법을 추가했습니다.
 - 모델 구조의 설명 가능성
 - 데이터셋 특성
 
-### 6.2 최종 선택 모델
+### 6.2 전체 실험 결과 비교표
+
+| 모델 | best val loss | best val acc | final val acc | 학습 시간 | 해석 |
+|---|---:|---:|---:|---:|---|
+| Baseline 3 Epoch | 0.5486 | 0.7120 | 0.7120 | 37.9초 | 빠르지만 성능이 낮은 기준 모델 |
+| Baseline EarlyStopping | 0.5220 | 0.7536 | 0.7627 | 133.6초 | baseline보다 개선되었지만 과적합 발생 |
+| OpenCV SimpleCNN | 0.5261 | 0.7645 | 0.7536 | 468.3초 | 증강만으로는 과적합 해결 부족 |
+| Regularized Original | 0.4877 | 0.7953 | 0.7862 | 198.9초 | 성능과 효율의 균형이 가장 좋음 |
+| Regularized OpenCV | 0.4738 | 0.7862 | 0.8043 | 913.6초 | loss는 가장 낮지만 학습 시간이 큼 |
+
+### 6.3 전체 비교 그래프
+
+아래 그래프는 03 분석 노트북에서 생성한 전체 모델 비교 그래프입니다.
+
+![Model Selection Summary Bars](../../outputs/figures/model_selection_summary_bars.png)
+
+그래프 해석:
+
+- best validation loss(가장 낮은 검증 손실)는 Regularized OpenCV가 가장 낮습니다.
+- best validation accuracy(가장 높은 검증 정확도)는 Regularized Original이 가장 높습니다.
+- 학습 시간은 Regularized OpenCV가 가장 길고, Regularized Original은 성능 대비 효율이 좋습니다.
+
+발표용 문장:
+
+> 전체 모델을 비교했을 때 Regularized OpenCV는 validation loss가 가장 낮았지만, 학습 시간이 크게 증가했습니다. 반면 Regularized Original은 validation accuracy가 가장 높고 학습 시간도 상대적으로 짧았습니다. 따라서 단순히 loss 하나만 보지 않고 성능과 효율을 함께 고려해 Regularized Original을 최종 모델로 선택했습니다.
+
+### 6.4 최종 선택 모델
 
 최종 선택 후보는 `Regularized Original`(원본 데이터 + 규제 모델) 모델입니다.
 
