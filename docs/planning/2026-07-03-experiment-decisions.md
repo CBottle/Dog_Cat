@@ -260,3 +260,73 @@ outputs/misclassified/
 - 각 실험의 best model을 저장합니다.
 - 마지막에는 여러 모델을 같은 test set에서 비교합니다.
 - 결과 분석은 숫자 지표와 오분류 이미지 분석을 함께 사용합니다.
+
+## 발표 흐름 업데이트
+
+2026-07-05 기준으로 발표 흐름은 다음처럼 가져가는 것이 좋습니다.
+
+```text
+1. Baseline 모델을 먼저 만듭니다.
+2. epoch를 늘려서 baseline 모델이 어떻게 학습되는지 확인합니다.
+3. loss curve를 보고 overfitting 가능성을 판단합니다.
+4. 첫 번째 개선책으로 OpenCV 데이터 증강을 적용합니다.
+5. OpenCV 증강만으로 충분하지 않으면 규제 방법을 추가합니다.
+6. 이후 best model들을 같은 test set에서 비교합니다.
+```
+
+발표 키워드는 다음과 같습니다.
+
+```text
+Baseline -> Epoch 늘리기 -> OpenCV 증강 -> 규제 -> 최종 비교
+```
+
+이 흐름을 선택한 이유는 다음과 같습니다.
+
+- 처음부터 좋은 모델을 만드는 것이 아니라, 문제를 발견하고 개선해가는 과정이 보입니다.
+- epoch를 늘리면서 train loss와 validation loss의 차이를 확인할 수 있습니다.
+- OpenCV 증강은 데이터 다양성 관점의 개선책입니다.
+- 규제는 모델이 train 데이터를 과하게 외우는 문제를 줄이기 위한 개선책입니다.
+- 각 단계의 결과가 다음 실험의 이유가 되므로 발표 흐름이 자연스럽습니다.
+
+## 02-1 OpenCV 실험 실행 메모
+
+02-1 OpenCV 증강 실험에서 다음과 같은 결과 흐름을 확인했습니다.
+
+```text
+epoch 1/30 | train loss 0.5286, train acc 0.7378 | val loss 0.5196, val acc 0.7663
+epoch 2/30 | train loss 0.3259, train acc 0.8629 | val loss 0.6920, val acc 0.7681
+epoch 3/30 | train loss 0.1530, train acc 0.9438 | val loss 0.7255, val acc 0.7409
+epoch 4/30 | train loss 0.0590, train acc 0.9807 | val loss 0.9627, val acc 0.7717
+epoch 5/30 | train loss 0.0303, train acc 0.9899 | val loss 1.2286, val acc 0.7301
+epoch 6/30 | train loss 0.0254, train acc 0.9918 | val loss 1.4454, val acc 0.7717
+```
+
+이 결과는 OpenCV 증강을 적용했는데도 overfitting이 강하게 나타난 사례로 볼 수 있습니다.
+
+관찰한 점은 다음과 같습니다.
+
+- train loss는 빠르게 낮아졌습니다.
+- train accuracy는 99% 수준까지 올라갔습니다.
+- validation accuracy는 약 0.73-0.77 근처에서 크게 개선되지 않았습니다.
+- validation loss는 epoch가 진행될수록 계속 증가했습니다.
+- best model은 validation loss가 가장 낮았던 epoch 1 기준으로 저장되었습니다.
+
+해석은 다음과 같습니다.
+
+- 모델이 train 데이터와 증강 데이터를 빠르게 외웠을 가능성이 있습니다.
+- OpenCV 증강이 데이터 수는 늘렸지만, 실제로는 같은 원본 이미지의 변형이므로 모델이 다양성을 충분히 학습하지 못했을 수 있습니다.
+- validation loss가 증가한 것은 틀린 예측을 더 강한 확신으로 하는 경우가 늘어난 것으로 볼 수 있습니다.
+- OpenCV 증강만으로는 overfitting 완화에 충분하지 않았습니다.
+
+다음 개선 방안은 다음과 같습니다.
+
+- 증강 개수를 줄여서 과도한 유사 이미지 반복을 줄입니다.
+- Dropout을 추가해 train 데이터에 과하게 맞는 현상을 줄입니다.
+- weight decay를 추가해 가중치가 너무 커지는 것을 억제합니다.
+- learning rate를 낮춰 학습이 너무 빠르게 train 데이터에 맞춰지는지 확인합니다.
+- BatchNorm을 추가해 학습 안정성을 확인합니다.
+- LR Scheduler를 추가해 validation loss가 정체될 때 learning rate를 줄입니다.
+
+발표에서는 다음과 같이 설명할 수 있습니다.
+
+> OpenCV 증강을 적용하면 데이터 다양성이 늘어나 overfitting이 줄어들 것으로 예상했습니다. 하지만 실험 결과 train accuracy는 빠르게 99%까지 상승한 반면 validation loss는 계속 증가했습니다. 이를 통해 단순 증강만으로는 일반화 성능 개선이 충분하지 않다고 판단했고, 다음 실험에서는 Dropout, weight decay, learning rate 조정 같은 규제 방법을 추가로 적용하기로 했습니다.
