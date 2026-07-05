@@ -449,6 +449,27 @@ overfitting(과적합)은 train loss(학습 손실)는 계속 낮아지지만 va
 - 실제 cat을 dog로 예측한 경우
 - 실제 dog를 cat으로 예측한 경우
 
+실험에서 비교한 두 규제 모델의 test set(테스트셋) confusion matrix(혼동 행렬)는 다음과 같습니다.
+
+![Regularized 모델 confusion matrix 비교](../../outputs/figures/test_confusion_matrices_two_regularized_models.png)
+
+| 모델 | 실제 cat -> 예측 cat | 실제 cat -> 예측 dog | 실제 dog -> 예측 cat | 실제 dog -> 예측 dog | 해석 |
+|---|---:|---:|---:|---:|---|
+| Regularized Original | 102 | 76 | 51 | 323 | dog는 비교적 잘 찾지만, cat을 dog로 착각하는 경우가 많았습니다. |
+| Regularized OpenCV | 142 | 36 | 85 | 289 | cat 오분류는 줄었지만, dog를 cat으로 착각하는 경우가 늘었습니다. |
+
+recall(재현율) 관점에서 보면 차이가 더 잘 보입니다.
+
+```text
+Regularized Original cat recall = 102 / (102 + 76) = 0.573
+Regularized Original dog recall = 323 / (323 + 51) = 0.864
+
+Regularized OpenCV cat recall = 142 / (142 + 36) = 0.798
+Regularized OpenCV dog recall = 289 / (289 + 85) = 0.773
+```
+
+즉, Regularized Original은 dog를 잘 찾는 쪽으로 치우쳐 있고, Regularized OpenCV는 cat을 더 잘 찾도록 바뀌었지만 dog 쪽 오분류가 늘었습니다. 이 그래프를 통해 accuracy(정확도) 하나만 보는 것보다, 어떤 class(분류 클래스)에서 어떤 방향으로 틀렸는지 보는 것이 중요하다고 판단했습니다.
+
 ### 8.3 precision(정밀도)
 
 모델이 특정 class(분류 클래스)라고 예측한 것 중 실제로 맞은 비율입니다.
@@ -533,6 +554,18 @@ confidence(확신도)가 높은 오분류를 내림차순으로 확인했을 때
 | 10 | cat | dog | 0.8537 | Persian |
 
 이 결과에서 중요하게 본 점은 단순히 틀린 것이 아니라, **모델이 높은 확신으로 고양이를 강아지라고 판단한 사례가 있었다는 점**입니다.
+
+상위 confidence(확신도) 오분류 이미지는 03-1 노트북에서 직접 열어보고, 다음 형식으로 분석합니다.
+
+| 순위 | 품종 | 오분류 방향 | confidence | 이미지에서 확인할 부분 | 원인 가설 | 개선 방향 |
+|---:|---|---|---:|---|---|---|
+| 1 | British Shorthair | cat -> dog | 0.9819 | 얼굴 방향, 귀 모양, 배경, 동물 크기 | cat의 핵심 특징보다 다른 특징을 강하게 본 가능성 | head ROI(머리 관심 영역), segmentation(영역 분할) |
+| 2 | Egyptian Mau | cat -> dog | 0.9681 | 무늬, 자세, 배경 복잡도 | 무늬나 자세가 dog 이미지와 비슷하게 작용했을 가능성 | 품종별 오분류 확인, 실패 유형별 증강 |
+| 3 | Bengal | cat -> dog | 0.9233 | 털 무늬, 얼굴 비율, 촬영 각도 | 털 무늬나 배경을 잘못된 근거로 사용했을 가능성 | segmentation(영역 분할), crop(자르기) |
+| 4 | Siamese | cat -> dog | 0.9193 | 얼굴 대비, 귀/코 주변 특징 | 얼굴 특징이 작거나 어둡게 보였을 가능성 | 입력 이미지 크기 확대, head ROI(머리 관심 영역) |
+| 5 | Sphynx | cat -> dog | 0.9190 | 털이 거의 없는 품종 특성 | 일반적인 고양이 이미지와 달라 모델이 헷갈렸을 가능성 | 품종별 데이터 확인, breed(품종) 기반 실패 분석 |
+
+이 표는 숫자만 보고 끝내지 않기 위한 기록표입니다. confidence(확신도)가 높은데 틀린 이미지는 모델이 잘못된 특징을 강하게 믿은 사례이므로, 발표에서는 "모델이 어떤 이미지를 어려워하는지 직접 확인했다"는 근거로 사용합니다.
 
 품종별로 오분류가 많이 나온 상위 품종은 다음과 같습니다.
 
