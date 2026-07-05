@@ -773,6 +773,10 @@ confidence(확신도)가 높은 오분류를 내림차순으로 확인했을 때
 
 상위 confidence(확신도) 오분류 이미지는 03-1 노트북에서 직접 열어보고 확인했습니다.
 
+아래 이미지는 `Regularized Original` 모델의 오분류 이미지를 confidence(확신도)가 높은 순서로 모아 본 것입니다. 03-1 노트북의 Step 4를 실행하면 `outputs/figures/regularized_original_misclassified_grid.png`로 저장됩니다.
+
+![Regularized Original 오분류 이미지 모음](../../outputs/figures/regularized_original_misclassified_grid.png)
+
 | 순위 | 품종 | 오분류 방향 | confidence |
 |---:|---|---|---:|
 | 1 | British Shorthair | cat -> dog | 0.9819 |
@@ -875,6 +879,20 @@ OpenCV augmentation(데이터 증강)을 무작정 많이 적용하는 것보다
 - 어두운 사진에서 많이 틀리면 밝기/대비 증강
 - 흐린 사진에서 많이 틀리면 blur(흐림) 대응
 - 위치 변화에서 많이 틀리면 crop(자르기) / rotate(회전) 조정
+
+이번 실험 결과를 보면 `Regularized Original` 모델은 실제 cat을 dog로 예측하는 경우가 많았습니다. 반면 `Regularized OpenCV` 모델은 cat recall(고양이 재현율)이 0.5730에서 0.7978로 좋아졌습니다.
+
+이 결과를 바탕으로 다음 추가 실험을 생각했습니다.
+
+| 추가 실험 아이디어 | 이유 | 확인할 지표 |
+|---|---|---|
+| cat 이미지 중심 OpenCV 증강 | Original 모델이 cat을 dog로 착각하는 경우가 많았기 때문에 cat 특징을 더 다양하게 보여줍니다. | cat recall, cat -> dog 오분류 개수 |
+| cat은 더 많이, dog는 적게 증강 | 전체 증강을 똑같이 적용하면 dog -> cat 오분류가 늘 수 있으므로 증강 비율을 조절합니다. | cat recall과 dog recall의 균형 |
+| 오분류가 많은 cat 품종 중심 증강 | British Shorthair, Sphynx, Egyptian Mau, Bengal처럼 많이 틀린 품종을 보강합니다. | 품종별 오분류 개수 |
+
+가설:
+
+> Original 모델의 약점은 cat을 dog로 착각하는 것이고, OpenCV 증강은 cat을 더 잘 찾는 데 도움이 된 것으로 보입니다. 따라서 다음 실험에서는 모든 이미지를 똑같이 증강하기보다, cat 이미지나 cat 오분류가 많은 품종을 중심으로 증강하면 두 모델의 약점을 보완할 수 있을 것이라고 생각했습니다.
 
 ### 10.4 transfer learning(전이학습) 적용
 
