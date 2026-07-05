@@ -266,6 +266,10 @@ OpenCV로 train(학습) 이미지만 augmentation(데이터 증강)했습니다.
 - 회전
 - 좌우 반전
 
+아래 이미지는 OpenCV augmentation(데이터 증강)을 적용한 예시입니다.
+
+![OpenCV 데이터 증강 예시](assets/opencv_augmentation_examples.png)
+
 OpenCV 증강 실험에서는 모델 구조를 바꾸지 않고, train 데이터만 늘렸습니다. 이렇게 해야 성능 변화가 모델 구조 때문인지 데이터 증강 때문인지 더 깔끔하게 비교할 수 있습니다.
 
 OpenCV 증강 후 train 데이터 수는 다음과 같습니다.
