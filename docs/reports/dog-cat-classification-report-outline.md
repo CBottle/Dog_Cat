@@ -147,6 +147,36 @@ optimizer.step()
 
 이번 프로젝트에서는 한 번에 완성 모델을 만들기보다, 하나씩 개선하면서 비교했습니다.
 
+실험 흐름은 다음과 같습니다. 실험 1, 2, 3은 순서대로 진행했고, 실험 4와 5는 규제 모델을 기준으로 원본 데이터와 OpenCV 증강 데이터를 비교하는 방식으로 진행했습니다.
+
+```mermaid
+flowchart LR
+    E1["1. Baseline 3 Epoch<br/>기본 CNN 기준 성능 확인"]
+    E2["2. Baseline + EarlyStopping<br/>epoch 증가와 조기 종료 확인"]
+    E3["3. OpenCV SimpleCNN<br/>증강만으로 개선되는지 확인"]
+    E4["4. Regularized Original<br/>원본 데이터 + 규제 모델"]
+    E5["5. Regularized OpenCV<br/>증강 데이터 + 규제 모델"]
+    C["최종 비교<br/>성능 + 학습 시간 + 설명 가능성"]
+
+    E1 --> E2 --> E3
+    E3 --> E4
+    E3 --> E5
+    E4 --> C
+    E5 --> C
+```
+
+텍스트로 정리하면 다음 흐름입니다.
+
+```text
+1. 기본 CNN 성능 확인
+-> 2. EarlyStopping을 추가해 baseline 개선
+-> 3. OpenCV 증강만으로 개선되는지 확인
+-> 4. 원본 데이터 + 규제 모델
+-> 5. OpenCV 증강 데이터 + 규제 모델
+
+4번과 5번은 같은 규제 모델을 사용하되, 데이터 조건만 다르게 비교했습니다.
+```
+
 | 실험 | 데이터 | 모델/개선점 | 목적 |
 |---|---|---|---|
 | 실험 1 | 원본 train(학습) | Baseline(기준 모델) 3 Epoch(3회 학습 반복) SimpleCNN | 가장 기본적인 기준 성능 확인 |
