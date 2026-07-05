@@ -111,13 +111,7 @@
 
 ## 4. PyTorch 학습 파이프라인
 
-### 4.1 PyTorch를 사용한 이유
-
-TensorFlow/Keras의 `model.fit()`은 학습이 간단하지만 내부 학습 흐름(training loop)이 많이 감춰집니다.
-
-이번 과제에서는 학습 과정을 직접 이해하는 것이 중요하므로 PyTorch로 학습 루프를 직접 작성했습니다.
-
-### 4.2 직접 작성한 학습 루프
+### 4.1 직접 작성한 학습 루프
 
 학습 흐름은 다음과 같습니다.
 
@@ -141,7 +135,7 @@ optimizer.step()
 
 발표용 문장:
 
-> PyTorch는 Keras의 fit처럼 한 줄로 학습을 끝내지 않고, zero_grad(기울기 초기화), forward(순전파), loss(손실), backward(역전파), step(가중치 업데이트) 흐름을 직접 작성해야 합니다. 덕분에 모델이 예측하고, 오차를 계산하고, 오차를 줄이는 방향으로 가중치를 업데이트하는 과정을 직접 확인할 수 있었습니다.
+> 학습 코드는 zero_grad(기울기 초기화), forward(순전파), loss(손실), backward(역전파), step(가중치 업데이트) 흐름이 보이도록 직접 작성했습니다. 이 과정을 통해 모델이 예측하고, 정답과 비교해 오차를 계산하고, 오차를 줄이는 방향으로 가중치를 업데이트한다는 점을 확인했습니다.
 
 ## 5. 모델 실험 설계
 
@@ -195,6 +189,58 @@ flowchart LR
 - train(학습) / validation(검증) loss curve(손실 곡선) 확인
 - overfitting(과적합)이 발생하는지 관찰
 
+모델 설계 코드는 다음과 같습니다.
+
+```python
+class SimpleCNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(64 * 16 * 16, 128),
+            nn.ReLU(),
+            nn.Linear(128, 2),
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.classifier(x)
+        return x
+```
+
+레이어별 설계 이유:
+
+| 구성 | 역할 | 넣은 이유 |
+|---|---|---|
+| `Conv2d(3, 16)` | RGB 이미지에서 작은 패턴을 찾습니다. | 입력 이미지가 RGB 3채널이므로 `in_channels=3`으로 시작했습니다. |
+| `Conv2d(16, 32)`, `Conv2d(32, 64)` | 채널 수를 늘리며 더 다양한 특징을 찾습니다. | 처음에는 단순한 선/색/무늬를 보고, 뒤로 갈수록 귀, 눈, 얼굴 형태 같은 더 복잡한 특징을 보게 하려는 목적입니다. |
+| `kernel_size=3` | 3x3 작은 창으로 주변 픽셀을 봅니다. | 이미지 CNN에서 자주 쓰는 기본 크기이고, 작은 패턴을 여러 층에서 조합하기 좋습니다. |
+| `padding=1` | convolution 후 이미지 크기가 바로 줄어드는 것을 막습니다. | 특징을 뽑기 전에 가장자리 정보가 너무 빨리 사라지지 않게 하기 위해 사용했습니다. |
+| `ReLU()` | 음수 값을 0으로 바꾸는 활성화 함수입니다. | 모델이 단순 직선 계산만 하지 않고 비선형 패턴을 학습할 수 있게 합니다. |
+| `MaxPool2d(2)` | 이미지의 가로/세로 크기를 절반으로 줄입니다. | 중요한 특징은 남기고 계산량을 줄이며, 위치가 조금 달라도 비슷하게 인식하도록 도와줍니다. |
+| `Flatten()` | 2차원 feature map(특징 지도)을 1줄 벡터로 펼칩니다. | 마지막 분류기인 Linear layer에 넣기 위한 형태로 바꿉니다. |
+| `Linear(64 * 16 * 16, 128)` | 뽑힌 특징들을 조합합니다. | CNN이 찾은 여러 특징을 바탕으로 cat/dog 판단 근거를 만듭니다. |
+| `Linear(128, 2)` | 최종 출력 2개를 만듭니다. | 이번 문제는 cat/dog 이진 분류이므로 출력 class를 2개로 설정했습니다. |
+
+발표용 문장:
+
+> Baseline 모델은 복잡한 모델보다 설명 가능한 SimpleCNN으로 시작했습니다. Conv2d로 이미지 특징을 뽑고, MaxPool2d로 크기를 줄이며, 마지막 Linear layer에서 cat/dog 두 클래스로 분류하도록 설계했습니다.
+
 ### 5.2 OpenCV 증강 실험
 
 OpenCV로 train(학습) 이미지만 augmentation(데이터 증강)했습니다.
@@ -206,6 +252,40 @@ OpenCV로 train(학습) 이미지만 augmentation(데이터 증강)했습니다.
 - blur(흐림)
 - 회전
 - 좌우 반전
+
+OpenCV 증강 실험에서는 모델 구조를 바꾸지 않고, train 데이터만 늘렸습니다. 이렇게 해야 성능 변화가 모델 구조 때문인지 데이터 증강 때문인지 더 깔끔하게 비교할 수 있습니다.
+
+핵심 코드는 다음과 같습니다.
+
+```python
+def brighten_image(image):
+    return cv2.convertScaleAbs(image, alpha=1.0, beta=35)
+
+def contrast_image(image):
+    return cv2.convertScaleAbs(image, alpha=1.25, beta=0)
+
+def blur_image(image):
+    return cv2.GaussianBlur(image, (5, 5), 0)
+
+def rotate_image(image):
+    height, width = image.shape[:2]
+    center = (width // 2, height // 2)
+    rotation_matrix = cv2.getRotationMatrix2D(center, angle=8, scale=1.0)
+    return cv2.warpAffine(image, rotation_matrix, (width, height), borderMode=cv2.BORDER_REFLECT_101)
+
+def flip_image(image):
+    return cv2.flip(image, 1)
+```
+
+증강별 의도:
+
+| 증강 | 넣은 이유 |
+|---|---|
+| 밝기 조정 | 사진이 밝거나 어두운 상황에도 대응해보기 위해 사용했습니다. |
+| 대비 조정 | 털 무늬나 얼굴 경계가 다르게 보이는 상황을 반영했습니다. |
+| blur(흐림) | 초점이 조금 맞지 않은 사진 상황을 반영했습니다. |
+| 회전 | 동물이 살짝 기울어진 사진에서도 특징을 찾도록 하기 위해 사용했습니다. |
+| 좌우 반전 | 같은 동물이라도 방향이 바뀔 수 있으므로 사용했습니다. |
 
 결과 해석:
 
@@ -220,6 +300,77 @@ overfitting(과적합)을 줄이기 위해 다음 방법을 추가했습니다.
 - weight decay(가중치 감쇠): 가중치가 너무 커지는 것 억제
 - 낮춘 learning rate(학습률): 너무 빠른 과적합 완화
 - LR Scheduler(학습률 조절기): validation loss(검증 손실)가 정체되면 learning rate 감소
+
+규제 모델 코드는 다음과 같습니다.
+
+```python
+class RegularizedCNN(nn.Module):
+    def __init__(self, dropout_p=0.5):
+        super().__init__()
+
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+            nn.BatchNorm2d(16),  # [규제] feature 분포를 안정화합니다.
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),  # [규제] 두 번째 convolution block도 안정화합니다.
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),  # [규제] 깊은 feature에서도 학습 흔들림을 줄입니다.
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Dropout(p=dropout_p),  # [규제] 일부 뉴런을 꺼서 암기를 줄입니다.
+            nn.Linear(64 * 16 * 16, 64),
+            nn.ReLU(),
+            nn.Dropout(p=dropout_p),  # [규제] classifier에서도 과적합을 줄입니다.
+            nn.Linear(64, 2),
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.classifier(x)
+        return x
+```
+
+학습 설정에서도 규제를 추가했습니다.
+
+| 코드 | 강조 | 넣은 이유 |
+|---|---|---|
+| **`nn.BatchNorm2d(16)`** / **`nn.BatchNorm2d(32)`** / **`nn.BatchNorm2d(64)`** | **규제/안정화 코드** | 각 convolution layer 뒤의 feature 분포를 안정화해서 학습이 흔들리는 것을 줄입니다. |
+| **`nn.Dropout(p=0.5)`** | **규제 코드** | 학습 중 일부 뉴런을 임시로 꺼서 train 데이터만 외우는 현상을 줄입니다. |
+| **`nn.Linear(64 * 16 * 16, 64)`** | **모델 복잡도 감소** | baseline의 hidden size 128보다 작게 만들어 classifier가 과하게 외우는 힘을 줄였습니다. |
+| **`weight_decay=1e-4`** | **규제 코드** | 가중치가 너무 커지는 것을 억제합니다. Keras의 L2 regularizer와 비슷한 역할로 이해할 수 있습니다. |
+| **`lr=0.0005`** | **학습률 조정** | baseline보다 더 작은 learning rate로 너무 빠르게 train 데이터에 맞춰지는 것을 줄여봅니다. |
+| **`ReduceLROnPlateau`** | **학습률 스케줄러** | validation loss가 정체되면 learning rate를 줄여 더 조심스럽게 학습하게 합니다. |
+
+학습 설정 코드는 다음과 같습니다.
+
+```python
+optimizer = optim.Adam(
+    model.parameters(),
+    lr=0.0005,
+    weight_decay=1e-4,
+)
+
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer,
+    mode="min",
+    factor=0.5,
+    patience=2,
+)
+```
+
+발표용 문장:
+
+> Baseline에서 train loss는 계속 낮아졌지만 validation loss가 안정적이지 않았습니다. 그래서 Regularized CNN에서는 BatchNorm으로 학습을 안정화하고, Dropout과 weight decay로 train 데이터 암기를 줄이며, learning rate와 scheduler로 학습 속도를 더 조심스럽게 조절했습니다.
 
 ### 5.4 실험별 결과 기록 공간
 
