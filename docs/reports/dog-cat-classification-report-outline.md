@@ -99,6 +99,19 @@
 | validation(검증) | 학습 중 모델 선택, overfitting(과적합) 판단, EarlyStopping(조기 종료)에 참고하는 데이터입니다. 가중치는 업데이트되지 않습니다. |
 | test(테스트) | 최종 모델을 평가하기 위한 데이터입니다. 학습과 모델 선택에 사용하지 않습니다. |
 
+이번 실험에서 최종 사용한 `split_70_15_15`의 dog/cat 분포는 다음과 같습니다.
+
+| split 설정 | 데이터 역할 | label(라벨) | count(개수) |
+|---|---|---|---:|
+| split_70_15_15 | train | cat | 832 |
+| split_70_15_15 | train | dog | 1,744 |
+| split_70_15_15 | validation | cat | 178 |
+| split_70_15_15 | validation | dog | 374 |
+| split_70_15_15 | test | cat | 178 |
+| split_70_15_15 | test | dog | 374 |
+
+정리하면 train(학습)은 2,576장, validation(검증)은 552장, test(테스트)는 552장입니다. 전체적으로 dog 이미지가 cat 이미지보다 많기 때문에, accuracy(정확도)만 보면 dog를 잘 맞히는 모델이 좋아 보일 수 있습니다. 그래서 이후 평가에서는 confusion matrix(혼동 행렬), precision(정밀도), recall(재현율)을 함께 확인했습니다.
+
 ### 3.3 breed(품종) 기준 stratified split(층화 분리)을 사용한 이유
 
 단순히 랜덤으로 나누면 특정 품종이 train(학습)에만 많이 들어가고 test(테스트)에는 적게 들어갈 수 있습니다.
@@ -254,6 +267,16 @@ OpenCV로 train(학습) 이미지만 augmentation(데이터 증강)했습니다.
 - 좌우 반전
 
 OpenCV 증강 실험에서는 모델 구조를 바꾸지 않고, train 데이터만 늘렸습니다. 이렇게 해야 성능 변화가 모델 구조 때문인지 데이터 증강 때문인지 더 깔끔하게 비교할 수 있습니다.
+
+OpenCV 증강 후 train 데이터 수는 다음과 같습니다.
+
+| dataset(데이터셋) | count(개수) | 설명 |
+|---|---:|---|
+| original train | 2,576 | 01 단계에서 만든 원본 train 이미지입니다. |
+| augmented only | 12,880 | OpenCV로 새로 만든 증강 이미지만 센 개수입니다. |
+| train used for 02-1 | 15,456 | 원본 train과 OpenCV 증강 이미지를 합쳐 실제 학습에 사용한 개수입니다. |
+
+중요한 점은 validation(검증)과 test(테스트)는 증강하지 않았다는 것입니다. 모델은 늘어난 train 데이터로 학습하지만, 검증과 평가는 원본 이미지 기준으로 진행해야 실제 일반화 성능을 더 공정하게 확인할 수 있습니다.
 
 핵심 코드는 다음과 같습니다.
 
