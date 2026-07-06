@@ -1,5 +1,7 @@
 # Dog/Cat 이미지 분류 파이프라인 구축 및 분석 보고서
 
+GitHub Repository: [CBottle/Dog_Cat](https://github.com/CBottle/Dog_Cat)
+
 ## 0. 문서 목적
 
 이 문서는 Oxford-IIIT Pet Dataset(옥스퍼드 반려동물 데이터셋)을 사용해 강아지/고양이 이진 이미지 분류 파이프라인(pipeline, 처리 흐름)을 직접 구축한 과정과 결과를 정리한 보고서입니다.
