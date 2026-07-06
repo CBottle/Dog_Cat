@@ -341,6 +341,10 @@ overfitting(과적합)을 줄이기 위해 다음 방법을 추가했습니다.
 - 낮춘 learning rate(학습률): 너무 빠른 과적합 완화
 - LR Scheduler(학습률 조절기): validation loss(검증 손실)가 정체되면 learning rate 감소
 
+아래 이미지는 RegularizedCNN(규제 적용 CNN)의 전체 구조를 시각화한 것입니다.
+
+![RegularizedCNN 구조 시각화](assets/regularized_cnn_structure.png)
+
 규제 모델 코드는 다음과 같습니다.
 
 ```python
